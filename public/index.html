@@ -1,0 +1,60 @@
+<html>
+
+<head>
+    <title>Express</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+
+<body>
+<h1>Express</h1>
+<p>Welcome to Express</p>
+
+<button onclick="signIn()">Ethereum ile Giriş Yap</button>
+
+<script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+
+<script>
+  async function signIn () {
+    // Cüzdan erişimi isteyelim
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+    console.log(accounts)
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    const signer = provider.getSigner()
+    console.log(signer)
+
+    const response = await fetch('/auth/ethereum/message', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ address: accounts[0] })
+    })
+
+    const { message } = await response.json()
+
+    const signature = await signer.signMessage(message)
+    console.log(signature)
+
+    const verifyResponse = await fetch('/auth/ethereum/verify', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ address: accounts[0], signature })
+    })
+
+    const { status } = await verifyResponse.json()
+
+    let authMessage;
+
+    if (status) authMessage = `Auth successful! Welcome <pre>${accounts[0]}</pre>`
+    else authMessage = `Auth failed. Please try again later or contact with us.`
+
+    document.querySelector('h1').innerHTML = authMessage
+  }
+</script>
+
+</body>
+
+</html>
